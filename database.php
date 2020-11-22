@@ -23,7 +23,7 @@ class database{
 			$dsn = "mysql:host=$this->host;dbname=$this->database;charset=$this->charset";
 			$this->db = new PDO($dsn, $this->username, $this->password);
 			$this->db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
-			echo 'Succesfully connected to the database'."<br>";
+			//echo 'Succesfully connected to the database'."<br>";
 		}	// catch error
 		catch (PDOexception $a){			
 			$this->db->rollback();
@@ -33,12 +33,58 @@ class database{
 		}
 	}
 
+	private function executeQuery($action, $statement, $executeArg){
+	// action = insert, select of delete
+	// statemet = je sql statement
+	// executeArg = array met daarin de key, value pairs die je meegeeft
+		//begin the transaction
+		$this->db->beginTransaction();
+		$result = null;
+		
+		$stmt = $this->db->prepare($statement);
+		$stmt->execute($executeArg);
+
+		
+		switch ($action) {
+			case 'insert':
+				$this->db->commit();
+				return;
+
+			case 'select':
+				$result = $stmt->fetch(PDO::FETCH_ASSOC);
+				break;
+
+				//todo: wat moet deze functie doen voor update /delete
+	
+		}
+
+		return $result;
+
+
+	}
+
 	//make a function to add a Account
 	public function addAccount($username,$email,$password){
 	
 		try{
+		$sql = "INSERT INTO account(id, username, email, password, created_at, updated_at ) 
+				VALUES(:id, :username, :email, :password, :created_at, :updated_at)";
+
+			
+			//hash the password
+			$hashPassword = password_hash($password, PASSWORD_DEFAULT);
+			$executeArgument = 	[
+			'id' => NULL,
+			'email'=>$email,			
+			'username'=>$username,
+			'password'=>$hashPassword,
+			'created_at'=>date("Y-m-d H:i:s"),
+			'updated_at'=>date("Y-m-d H:i:s")
+			];
+
+			$this->executeQuery('insert', $sql, $executeArgument);
 			//begin the transaction
-			$this->db->beginTransaction();
+			/*$this->db->beginTransaction();
 			echo "Beginning the transaction"."<br>";
 			//add account
 			$sql = "INSERT INTO account(id, username, email, password, created_at, updated_at ) 
@@ -57,7 +103,7 @@ class database{
 			'created_at'=>date("Y-m-d H:i:s"),
 			'updated_at'=>date("Y-m-d H:i:s")
 			]);
-			$this->db->commit();
+			$this->db->commit();*/
 			echo "Account is added";
 		}
 		catch (PDOexception $a){			
@@ -87,17 +133,21 @@ class database{
 		$sql = "
 			SELECT 
 				account.id as account_id,				 
-				account.password 
+				account.password as password
 			FROM account			
 			WHERE username = :username
 		";
-		echo $sql;
+		/*echo $sql;
 		//prepare
 		$stmt = $this->db->prepare($sql);
 		//execute
 		$stmt->execute(['username'=>$username]);
 		//feth the executed code this should only return an associative array because we are using :FETCH_ASSOC.
-		$result = $stmt->fetch(PDO::FETCH_ASSOC);
+		$result = $stmt->fetch(PDO::FETCH_ASSOC); */
+
+			$result = $this->executeQuery('select', $sql, ['username'=>$username]);
+			print_r($result);
+
 
 		//CHECK IF $result is an array
 		if(is_array($result)){
@@ -204,7 +254,7 @@ class database{
 			//begin the transaction
 			$this->db->beginTransaction();
 			echo "Beginning the transaction"."<br>";			
-			$sql = "UPDATE activiteit SET activiteitcode=:activiteitcode, activiteitnaam=:activiteitnaam";
+			$sql = "UPDATE activiteit SET activiteitnaam=:activiteitnaam WHERE activiteitcode=:activiteitcode";
 			echo "sql statement: ".$sql."<br>";
 			//prepare
 			$stmt = $this->db->prepare($sql);			
@@ -271,11 +321,11 @@ class database{
 			echo "sql statement: ".$sql."<br>";
 			//prepare
 			$stmt = $this->db->prepare($sql);	
-			$koppelcode = $this->db->lastInsertId();
+			
 			//execute 
 			//watch out the inschrijfdatum is by default the time you will add the new jonger.
 			$stmt->execute([
-			'koppelcode' => $koppelcode,
+			'koppelcode' => NULL,
 			'activiteitcode' => $activiteitcode,
 			'jongerecode'=>$jongerecode
 			]);
@@ -355,10 +405,15 @@ class database{
 	public function deleteActiviteit($activiteitcode){
 	
 		try{
-			$this->db->beginTransaction();		
+			$this->db->beginTransaction();	
 
-			$stmt1 = $this->db->prepare("DELETE FROM activiteit WHERE activiteitcode=:activiteitcode");
+			$stmt1 = $this->db->prepare("DELETE FROM koppel WHERE activiteitcode=:activiteitcode");
 			$stmt1->execute([
+			'activiteitcode'=>$activiteitcode
+			]);
+
+			$stmt = $this->db->prepare("DELETE FROM activiteit WHERE activiteitcode=:activiteitcode");
+			$stmt->execute([
 			'activiteitcode'=>$activiteitcode
 			]);
 

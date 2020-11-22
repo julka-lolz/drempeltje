@@ -23,7 +23,20 @@ if(isset($_POST['submit'])){
 
 ?>
 <html>
-	<head>	
+	<head>
+	<style>
+		div{
+			float: center;
+			text-align: center;			
+			margin-left: 40%;
+			margin-right:40%;
+			border-style: inset;
+			background-color: white;
+		}
+		body{
+			background-color: gray;
+		}
+	</style>
 	</head>
 	<body>    
 		<div>

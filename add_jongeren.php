@@ -34,7 +34,8 @@ if(isset($_POST['submit'])){
 		<div>
 			<form action="add_jongeren.php" method="post">
 				<label for="jongerecode"><b>Code</b><br></label>
-				<input type="text" placeholder="Fill in your code" name="jongerecode" required><br><br>
+				<!-- TODO: ALTER DATABA -->
+				<input type="text" placeholder="Fill in your code" name="jongerecode" required><br><br> 
 				<label for="Name"><b>Name</b><br></label>
 				<input type="text" placeholder="Fill in your name" name="roepnaam" required><br><br>
 				<label for="Middlename"><b>Middlename</b><br></label>
